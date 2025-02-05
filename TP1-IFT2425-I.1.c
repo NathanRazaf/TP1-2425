@@ -13,11 +13,14 @@
 //------------------------------------------------
 #include <stdio.h>
 #include <math.h>
+#include <complex.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
 #include <new>
 #include <time.h>
+#include <stdbool.h>
+
 
 //------------------------------------------------
 // DEFINITIONS -----------------------------------
@@ -47,16 +50,19 @@ GC	  gc;
 /************************************************************************/
 int open_display()
 {
-  if ((display=XOpenDisplay(NULL))==NULL)
-   { printf("Connection impossible\n");
-     return(-1); }
-
-  else
-   { screen_num=DefaultScreen(display);
-     visual=DefaultVisual(display,screen_num);
-     depth=DefaultDepth(display,screen_num);
-     root=RootWindow(display,screen_num);
-     return 0; }
+    if ((display=XOpenDisplay(NULL))==NULL)
+    {
+        printf("Connection impossible\n");
+        return(-1);
+    }
+    else
+    {
+        screen_num=DefaultScreen(display);
+        visual=DefaultVisual(display,screen_num);
+        depth=DefaultDepth(display,screen_num);
+        root=RootWindow(display,screen_num);
+        return 0;
+    }
 }
 
 /************************************************************************/
@@ -65,42 +71,42 @@ int open_display()
 /************************************************************************/
 Window fabrique_window(char *nom_fen,int x,int y,int width,int height,int zoom)
 {
-  Window                 win;
-  XSizeHints      size_hints;
-  XWMHints          wm_hints;
-  XClassHint     class_hints;
-  XTextProperty  windowName, iconName;
+    Window                 win;
+    XSizeHints      size_hints;
+    XWMHints          wm_hints;
+    XClassHint     class_hints;
+    XTextProperty  windowName, iconName;
 
-  char *name=nom_fen;
+    char *name=nom_fen;
 
-  if(zoom<0) { width/=-zoom; height/=-zoom; }
-  if(zoom>0) { width*=zoom;  height*=zoom;  }
+    if(zoom<0) { width/=-zoom; height/=-zoom; }
+    if(zoom>0) { width*=zoom;  height*=zoom;  }
 
-  win=XCreateSimpleWindow(display,root,x,y,width,height,1,0,255);
+    win=XCreateSimpleWindow(display,root,x,y,width,height,1,0,255);
 
-  size_hints.flags=PPosition|PSize|PMinSize;
-  size_hints.min_width=width;
-  size_hints.min_height=height;
+    size_hints.flags=PPosition|PSize|PMinSize;
+    size_hints.min_width=width;
+    size_hints.min_height=height;
 
-  XStringListToTextProperty(&name,1,&windowName);
-  XStringListToTextProperty(&name,1,&iconName);
-  wm_hints.initial_state=NormalState;
-  wm_hints.input=True;
-  wm_hints.flags=StateHint|InputHint;
-  class_hints.res_name=nom_fen;
-  class_hints.res_class=nom_fen;
+    XStringListToTextProperty(&name,1,&windowName);
+    XStringListToTextProperty(&name,1,&iconName);
+    wm_hints.initial_state=NormalState;
+    wm_hints.input=True;
+    wm_hints.flags=StateHint|InputHint;
+    class_hints.res_name=nom_fen;
+    class_hints.res_class=nom_fen;
 
-  XSetWMProperties(display,win,&windowName,&iconName,
-                   NULL,0,&size_hints,&wm_hints,&class_hints);
+    XSetWMProperties(display,win,&windowName,&iconName,
+                     NULL,0,&size_hints,&wm_hints,&class_hints);
 
-  gc=XCreateGC(display,win,0,NULL);
+    gc=XCreateGC(display,win,0,NULL);
 
-  XSelectInput(display,win,ExposureMask|KeyPressMask|ButtonPressMask| 
+    XSelectInput(display,win,ExposureMask|KeyPressMask|ButtonPressMask|
                ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask| 
                StructureNotifyMask);
 
-  XMapWindow(display,win);
-  return(win);
+    XMapWindow(display,win);
+    return(win);
 }
 
 /****************************************************************************/
@@ -110,66 +116,69 @@ Window fabrique_window(char *nom_fen,int x,int y,int width,int height,int zoom)
 /****************************************************************************/
 XImage* cree_Ximage(float** mat,int z,int length,int width)
 {
-  int lgth,wdth,lig,col,zoom_col,zoom_lig;
-  float somme;
-  unsigned char	 pix;
-  unsigned char* dat;
-  XImage* imageX;
+    int lgth,wdth,lig,col,zoom_col,zoom_lig;
+    float somme;
+    unsigned char	 pix;
+    unsigned char* dat;
+    XImage* imageX;
 
-  /*Zoom positiv*/
-  /*------------*/
-  if (z>0)
-  {
-   lgth=length*z;
-   wdth=width*z;
+    /*Zoom positiv*/
+    /*------------*/
+    if (z>0)
+    {
+        lgth=length*z;
+        wdth=width*z;
 
-   dat=(unsigned char*)malloc(lgth*(wdth*4)*sizeof(unsigned char));
-   if (dat==NULL)
-      { printf("Impossible d'allouer de la memoire.");
-        exit(-1); }
+        dat=(unsigned char*)malloc(lgth*(wdth*4)*sizeof(unsigned char));
+        if (dat==NULL)
+        {
+            printf("Impossible d'allouer de la memoire.");
+            exit(-1);
+        }
 
-  for(lig=0;lig<lgth;lig=lig+z) for(col=0;col<wdth;col=col+z)
-   { 
-    pix=(unsigned char)mat[lig/z][col/z];
-    for(zoom_lig=0;zoom_lig<z;zoom_lig++) for(zoom_col=0;zoom_col<z;zoom_col++)
-      { 
-       dat[((lig+zoom_lig)*wdth*4)+((4*(col+zoom_col))+0)]=pix;
-       dat[((lig+zoom_lig)*wdth*4)+((4*(col+zoom_col))+1)]=pix;
-       dat[((lig+zoom_lig)*wdth*4)+((4*(col+zoom_col))+2)]=pix;
-       dat[((lig+zoom_lig)*wdth*4)+((4*(col+zoom_col))+3)]=pix; 
-       }
-    }
-  } /*--------------------------------------------------------*/
+        for(lig=0;lig<lgth;lig=lig+z) for(col=0;col<wdth;col=col+z)
+        {
+            pix=(unsigned char)mat[lig/z][col/z];
+            for (zoom_lig=0;zoom_lig<z;zoom_lig++) for(zoom_col=0;zoom_col<z;zoom_col++)
+            {
+                dat[((lig+zoom_lig)*wdth*4)+((4*(col+zoom_col))+0)]=pix;
+                dat[((lig+zoom_lig)*wdth*4)+((4*(col+zoom_col))+1)]=pix;
+                dat[((lig+zoom_lig)*wdth*4)+((4*(col+zoom_col))+2)]=pix;
+                dat[((lig+zoom_lig)*wdth*4)+((4*(col+zoom_col))+3)]=pix;
+            }
+        }
+    } /*--------------------------------------------------------*/
 
-  /*Zoom negatifv*/
-  /*------------*/
-  else
-  {
-   z=-z;
-   lgth=(length/z);
-   wdth=(width/z);
+    /*Zoom negatifv*/
+    /*------------*/
+    else
+    {
+        z=-z;
+        lgth=(length/z);
+        wdth=(width/z);
 
-   dat=(unsigned char*)malloc(lgth*(wdth*4)*sizeof(unsigned char));
-   if (dat==NULL)
-      { printf("Impossible d'allouer de la memoire.");
-        exit(-1); }
-
-  for(lig=0;lig<(lgth*z);lig=lig+z) for(col=0;col<(wdth*z);col=col+z)
-   {  
-    somme=0.0;
-    for(zoom_lig=0;zoom_lig<z;zoom_lig++) for(zoom_col=0;zoom_col<z;zoom_col++)
-     somme+=mat[lig+zoom_lig][col+zoom_col];
+        dat=(unsigned char*)malloc(lgth*(wdth*4)*sizeof(unsigned char));
+        if (dat==NULL)
+        {
+            printf("Impossible d'allouer de la memoire.");
+            exit(-1);
+        }
+        for(lig=0;lig<(lgth*z);lig=lig+z) for(col=0;col<(wdth*z);col=col+z)
+        {
+            somme=0.0;
+            for(zoom_lig=0;zoom_lig<z;zoom_lig++) for(zoom_col=0;zoom_col<z;zoom_col++)
+                somme+=mat[lig+zoom_lig][col+zoom_col];
            
-     somme/=(z*z);    
-     dat[((lig/z)*wdth*4)+((4*(col/z))+0)]=(unsigned char)somme;
-     dat[((lig/z)*wdth*4)+((4*(col/z))+1)]=(unsigned char)somme;
-     dat[((lig/z)*wdth*4)+((4*(col/z))+2)]=(unsigned char)somme;
-     dat[((lig/z)*wdth*4)+((4*(col/z))+3)]=(unsigned char)somme; 
-   }
-  } /*--------------------------------------------------------*/
+            somme/=(z*z);
+            dat[((lig/z)*wdth*4)+((4*(col/z))+0)] = (unsigned char)somme;
+            dat[((lig/z)*wdth*4)+((4*(col/z))+1)] = (unsigned char)somme;
+            dat[((lig/z)*wdth*4)+((4*(col/z))+2)] = (unsigned char)somme;
+            dat[((lig/z)*wdth*4)+((4*(col/z))+3)] = (unsigned char)somme;
+        }
+    } /*--------------------------------------------------------*/
 
-  imageX=XCreateImage(display,visual,depth,ZPixmap,0,(char*)dat,wdth,lgth,16,wdth*4);
-  return (imageX);
+    imageX = XCreateImage(display,visual,depth,ZPixmap,0,(char*)dat,wdth,lgth,16,wdth*4);
+    return (imageX);
 }
 
 //-------------------------//
@@ -179,70 +188,76 @@ XImage* cree_Ximage(float** mat,int z,int length,int width)
 //  alloue de la memoire pour une matrice 1d de float
 //----------------------------------------------------------
 float* fmatrix_allocate_1d(int hsize)
- {
-  float* matrix;
-  matrix=new float[hsize]; return matrix; }
+{
+    float* matrix;
+    matrix=new float[hsize]; return matrix; }
 
 //----------------------------------------------------------
 //  alloue de la memoire pour une matrice 2d de float
 //----------------------------------------------------------
 float** fmatrix_allocate_2d(int vsize,int hsize)
- {
-  float** matrix;
-  float *imptr;
+{
+    float** matrix;
+    float *imptr;
 
-  matrix=new float*[vsize];
-  imptr=new  float[(hsize)*(vsize)];
-  for(int i=0;i<vsize;i++,imptr+=hsize) matrix[i]=imptr;
-  return matrix;
- }
+    matrix=new float*[vsize];
+    imptr=new  float[(hsize)*(vsize)];
+    for(int i=0;i<vsize;i++,imptr+=hsize) matrix[i]=imptr;
+    return matrix;
+}
 
 //----------------------------------------------------------
 // libere la memoire de la matrice 1d de float
 //----------------------------------------------------------
 void free_fmatrix_1d(float* pmat)
-{ delete[] pmat; }
+{
+    delete[] pmat;
+}
 
 //----------------------------------------------------------
 // libere la memoire de la matrice 2d de float
 //----------------------------------------------------------
 void free_fmatrix_2d(float** pmat)
-{ delete[] (pmat[0]);
-  delete[] pmat;}
+{
+    delete[] (pmat[0]);
+    delete[] pmat;
+}
 
 //----------------------------------------------------------
 // Sauvegarde de l'image de nom <name> au format pgm                        
 //----------------------------------------------------------                
 void SaveImagePgm(char* bruit,char* name,float** mat,int lgth,int wdth)
 {
- int i,j;
- char buff[300];
- FILE* fic;
+    int i,j;
+    char buff[300];
+    FILE* fic;
 
-  //--extension--
-  strcpy(buff,bruit);
-  strcat(buff,name);
-  strcat(buff,".pgm");
+    //--extension--
+    strcpy(buff,bruit);
+    strcat(buff,name);
+    strcat(buff,".pgm");
 
-  //--ouverture fichier--
-  fic=fopen(buff,"wb");
+    //--ouverture fichier--
+    fic=fopen(buff,"wb");
     if (fic==NULL) 
-        { printf("Probleme dans la sauvegarde de %s",buff); 
-          exit(-1); }
-  printf("\n Sauvegarde de %s au format pgm\n",buff);
+    {
+        printf("Probleme dans la sauvegarde de %s",buff);
+        exit(-1);
+    }
+    printf("\n Sauvegarde de %s au format pgm\n",buff);
 
-  //--sauvegarde de l'entete--
-  fprintf(fic,"P5");
-  fprintf(fic,"\n# IMG Module");
-  fprintf(fic,"\n%d %d",wdth,lgth);
-  fprintf(fic,"\n255\n");
+    //--sauvegarde de l'entete--
+    fprintf(fic,"P5");
+    fprintf(fic,"\n# IMG Module");
+    fprintf(fic,"\n%d %d",wdth,lgth);
+    fprintf(fic,"\n255\n");
 
-  //--enregistrement--
-  for(i=0;i<lgth;i++) for(j=0;j<wdth;j++) 
-	fprintf(fic,"%c",(char)mat[i][j]);
+    //--enregistrement--
+    for(i=0;i<lgth;i++) for(j=0;j<wdth;j++)
+	    fprintf(fic,"%c",(char)mat[i][j]);
    
-  //--fermeture fichier--
-   fclose(fic); 
+    //--fermeture fichier--
+    fclose(fic);
 }
 
 //----------------------------------------------------------
@@ -250,26 +265,26 @@ void SaveImagePgm(char* bruit,char* name,float** mat,int lgth,int wdth)
 //----------------------------------------------------------
 void Recal(float** mat,int lgth,int wdth)
 {
- int i,j;
- float max,min,tmp;;
+    int i,j;
+    float max,min,tmp;;
 
 
- //Recherche du min
-  min=mat[0][0];
-  for(i=0;i<lgth;i++) for(j=0;j<wdth;j++)
-    if (mat[i][j]<min) min=mat[i][j];
+    //Recherche du min
+    min=mat[0][0];
+    for(i=0;i<lgth;i++) for(j=0;j<wdth;j++)
+        if (mat[i][j]<min) min=mat[i][j];
 
-  //plus min
-  for(i=0;i<lgth;i++) for(j=0;j<wdth;j++) mat[i][j]-=min;
+    //plus min
+    for(i=0;i<lgth;i++) for(j=0;j<wdth;j++) mat[i][j]-=min;
  
-  //Recherche du max
-  max=mat[0][0];
-  for(i=0;i<lgth;i++) for(j=0;j<wdth;j++) 
-    if (mat[i][j]>max) max=mat[i][j];
+    //Recherche du max
+    max=mat[0][0];
+    for(i=0;i<lgth;i++) for(j=0;j<wdth;j++)
+        if (mat[i][j]>max) max=mat[i][j];
 
-  //Recalibre la matrice
- for(i=0;i<lgth;i++) for(j=0;j<wdth;j++)
-   mat[i][j]*=(255/max);
+    //Recalibre la matrice
+    for(i=0;i<lgth;i++) for(j=0;j<wdth;j++)
+        mat[i][j]*=(255/max);
 }
 
 //----------------------------------------------------------
@@ -277,35 +292,64 @@ void Recal(float** mat,int lgth,int wdth)
 //----------------------------------------------------------
 void Egalise(float** img,int lgth,int wdth,int thresh)
 {
- int i,j;
- float tmp;
- float nb;
- float HistoNg[256];
- float FnctRept[256];
+    int i,j;
+    float tmp;
+    float nb;
+    float HistoNg[256];
+    float FnctRept[256];
 
- //Calcul Histogramme Ng
- for(i=0;i<256;i++) HistoNg[i]=0.0;
+    //Calcul Histogramme Ng
+    for(i=0;i<256;i++) HistoNg[i]=0.0;
 
- nb=0;
- for(i=0;i<lgth;i++) for(j=0;j<wdth;j++)
-    { tmp=img[i][j];
-      if (tmp>thresh) { HistoNg[(int)(tmp)]++; nb++; } } 
+    nb=0;
+    for(i=0;i<lgth;i++) for(j=0;j<wdth;j++)
+    {
+        tmp=img[i][j];
+        if (tmp>thresh) { HistoNg[(int)(tmp)]++; nb++; } }
  
- for(i=0;i<256;i++)  HistoNg[i]/=(float)(nb);
+    for(i=0;i<256;i++)  HistoNg[i]/=(float)(nb);
 
- //Calcul Fnct Repartition
- for(i=0;i<256;i++) FnctRept[i]=0.0;
+    //Calcul Fnct Repartition
+    for(i=0;i<256;i++) FnctRept[i]=0.0;
 
- for(i=0;i<256;i++)
-    { if (i>0)  FnctRept[i]=FnctRept[i-1]+HistoNg[i];
-      else      FnctRept[i]=FnctRept[i]; }
+    for(i=0;i<256;i++)
+    {
+        if (i>0)  FnctRept[i]=FnctRept[i-1]+HistoNg[i];
+        else      FnctRept[i]=FnctRept[i];
+    }
 
- for(i=0;i<256;i++) FnctRept[i]=(int)((FnctRept[i]*255)+0.5);
+    for(i=0;i<256;i++) FnctRept[i]=(int)((FnctRept[i]*255)+0.5);
 
- //Egalise
- for(i=0;i<lgth;i++) for(j=0;j<wdth;j++)
-   img[i][j]=FnctRept[(int)(img[i][j])];
+    //Egalise
+    for(i=0;i<lgth;i++) for(j=0;j<wdth;j++)
+        img[i][j]=FnctRept[(int)(img[i][j])];
 }
+
+
+
+
+
+bool is_in_mandelbrot_set(const int x, const int y, int width, int height, int num_iterations) {
+    const double real = 2.0 * (x - width / 1.35) / (width - 1);  // échelle sur [-1.5, 0.5]
+    const double image = 2.0 * (y - height / 2.0) / (height - 1);  // échelle sur [-1, 1]
+
+    const _Complex double c = real + image * _Complex_I;
+    _Complex double z = 0.0 + 0.0 * _Complex_I;
+
+    for (int i = 0; i < num_iterations; i++) {
+        z = CARRE(z) + c;
+        if (cabs(z) > 2.0) return false;
+    }
+
+    return true;
+}
+
+void question_one(float** Graph2D, const int length, const int width) {
+    for(int i=0;i<length;i++) for(int j=0;j<width;j++) {
+        Graph2D[i][j]=is_in_mandelbrot_set(j,i,length,width,200) ? 0 : 255;
+    }
+}
+
 
 
 //----------------------------------------------------------
@@ -315,32 +359,35 @@ void Egalise(float** img,int lgth,int wdth,int thresh)
 //----------------------------------------------------------
 int main(int argc,char** argv)
 {
-  int i,j,k;
- int flag_graph;
- int zoom;
+    int i,j,k;
+    int flag_graph;
+    int zoom;
 
- //Pour Xwindow
- //------------
- XEvent ev;
- Window win_ppicture;
- XImage *x_ppicture; 
- char   nomfen_ppicture[100]; 
- int    length,width;
+    //Pour Xwindow
+    //------------
+    XEvent ev;
+    Window win_ppicture;
+    XImage *x_ppicture;
+    char   nomfen_ppicture[100];
+    int    length,width;
 
- length=width=512;
- float** Graph2D=fmatrix_allocate_2d(length,width); 
- flag_graph=1;
- zoom=1;
+    length=width=512;
+    float** Graph2D=fmatrix_allocate_2d(length,width);
+    flag_graph=1;
+    zoom=1;
 
- //Init
- for(i=0;i<length;i++) for(j=0;j<width;j++) Graph2D[i][j]=0.0;
+    //Init
+    for(i=0;i<length;i++) for(j=0;j<width;j++) Graph2D[i][j]=0.0;
  
 //--------------------------------------------------------------------------------
 // PROGRAMME ---------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
- //Affichage dégradé de niveaux de gris dans Graph2D
- for(int i=0;i<length;i++) for(int j=0;j<width;j++) Graph2D[i][j]=j/2.0;
+    //Affichage dégradé de niveaux de gris dans Graph2D
+    // for(int i=0;i<length;i++) for(int j=0;j<width;j++) Graph2D[i][j]=j/2.0;
+
+
+    question_one(Graph2D, length, width);
 
   
    //---------------------------
@@ -356,48 +403,46 @@ int main(int argc,char** argv)
 //---------------- visu sous XWINDOW ---------------------------------------------
 //--------------------------------------------------------------------------------
   
-//Recalage-Egalise le graph
-Recal(Graph2D,length,width);
-Egalise(Graph2D,length,width,0.0);
+    //Recalage-Egalise le graph
+    Recal(Graph2D,length,width);
+    Egalise(Graph2D,length,width,0.0);
 
- if (flag_graph)
- {
- //ouverture session graphique
- if (open_display()<0) printf(" Impossible d'ouvrir une session graphique");
- sprintf(nomfen_ppicture,"Graphe : ");
- win_ppicture=fabrique_window(nomfen_ppicture,10,10,width,length,zoom);
- x_ppicture=cree_Ximage(Graph2D,zoom,length,width);
+    if (flag_graph)
+    {
+        //ouverture session graphique
+        if (open_display()<0) printf(" Impossible d'ouvrir une session graphique");
+        sprintf(nomfen_ppicture,"Graphe : ");
+        win_ppicture=fabrique_window(nomfen_ppicture,10,10,width,length,zoom);
+        x_ppicture=cree_Ximage(Graph2D,zoom,length,width);
 
- //Sauvegarde
- SaveImagePgm((char*)"",(char*)"FractalMandelbrot",Graph2D,length,width);
- printf("\n\n Pour quitter,appuyer sur la barre d'espace");
- fflush(stdout);
+    //Sauvegarde
+    SaveImagePgm((char*)"",(char*)"FractalMandelbrot",Graph2D,length,width);
+    printf("\n\n Pour quitter,appuyer sur la barre d'espace");
+    fflush(stdout);
 
- //boucle d'evenements
-  for(;;)
-     {
-      XNextEvent(display,&ev);
-       switch(ev.type)
+    //boucle d'evenements
+    for(;;)
+    {
+        XNextEvent(display,&ev);
+        switch(ev.type)
         {
-	 case Expose:   
-         XPutImage(display,win_ppicture,gc,x_ppicture,0,0,0,0,x_ppicture->width,x_ppicture->height);  
-         break;
-
-         case KeyPress: 
-         XDestroyImage(x_ppicture);
-
-         XFreeGC(display,gc);
-         XCloseDisplay(display);
-         flag_graph=0;
-         break;
-         }
-   if (!flag_graph) break;
-     }
- } 
+	        case Expose:
+                XPutImage(display,win_ppicture,gc,x_ppicture,0,0,0,0,x_ppicture->width,x_ppicture->height);
+                break;
+            case KeyPress:
+                XDestroyImage(x_ppicture);
+                XFreeGC(display,gc);
+                XCloseDisplay(display);
+                flag_graph=0;
+                break;
+        }
+        if (!flag_graph) break;
+        }
+    }
        
- //retour sans probleme 
- printf("\n Fini... \n\n\n");
- return 0;
- }
+    //retour sans probleme
+    printf("\n Fini... \n\n\n");
+    return 0;
+}
  
 
