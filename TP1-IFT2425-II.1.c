@@ -1,25 +1,23 @@
 //------------------------------------------------------
 // module  : Tp-IFT2425-I.1.c
-// author  : 
-// date    : 
+// author  :
+// date    :
 // version : 1.0
 // language: C
 // note    :
 //------------------------------------------------------
-//  
+//
 
 //------------------------------------------------
 // FICHIERS INCLUS -------------------------------
 //------------------------------------------------
 #include <stdio.h>
 #include <math.h>
-#include <complex.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
 #include <new>
 #include <time.h>
-#include <stdbool.h>
 
 
 //------------------------------------------------
@@ -67,7 +65,7 @@ int open_display()
 
 /************************************************************************/
 /* FABRIQUE_WINDOW()							*/
-/* Cette fonction crée une fenetre X et l'affiche à l'écran.	        */
+/* Cette fonction crï¿½e une fenetre X et l'affiche ï¿½ l'ï¿½cran.	        */
 /************************************************************************/
 Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int zoom)
 {
@@ -102,7 +100,7 @@ Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int z
     gc = XCreateGC(display, win, 0, NULL);
 
     XSelectInput(display, win, ExposureMask|KeyPressMask|ButtonPressMask|
-               ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask| 
+               ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask|
                StructureNotifyMask);
 
     XMapWindow(display, win);
@@ -111,7 +109,7 @@ Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int z
 
 /****************************************************************************/
 /* CREE_XIMAGE()							    */
-/* Crée une XImage à partir d'un tableau de float                           */
+/* Crï¿½e une XImage ï¿½ partir d'un tableau de float                           */
 /* L'image peut subir un zoom.						    */
 /****************************************************************************/
 XImage* cree_Ximage(float** mat, int z, int length, int width)
@@ -168,7 +166,7 @@ XImage* cree_Ximage(float** mat, int z, int length, int width)
             somme = 0.0;
             for(zoom_lig = 0; zoom_lig < z; zoom_lig++) for (zoom_col = 0; zoom_col < z; zoom_col++)
                 somme += mat[lig+zoom_lig][col+zoom_col];
-           
+
             somme /= (z*z);
             dat[((lig/z)*wdth*4) + ((4*(col/z))+0)] = (unsigned char)somme;
             dat[((lig/z)*wdth*4) + ((4*(col/z))+1)] = (unsigned char)somme;
@@ -224,8 +222,8 @@ void free_fmatrix_2d(float** pmat)
 }
 
 //----------------------------------------------------------
-// Sauvegarde de l'image de nom <name> au format pgm                        
-//----------------------------------------------------------                
+// Sauvegarde de l'image de nom <name> au format pgm
+//----------------------------------------------------------
 void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth)
 {
     int i, j;
@@ -255,7 +253,7 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth)
     //--enregistrement--
     for(i = 0; i < lgth; i++) for (j = 0; j < wdth; j++)
 	    fprintf(fic, "%c", (char) mat[i][j]);
-   
+
     //--fermeture fichier--
     fclose(fic);
 }
@@ -276,7 +274,7 @@ void Recal(float** mat, int lgth, int wdth)
 
     //plus min
     for(i = 0; i < lgth; i++) for (j = 0; j < wdth; j++) mat[i][j] -= min;
- 
+
     //Recherche du max
     max = mat[0][0];
     for(i = 0; i < lgth; i++) for (j = 0; j < wdth; j++)
@@ -288,7 +286,7 @@ void Recal(float** mat, int lgth, int wdth)
 }
 
 //----------------------------------------------------------
-//  Egalisation Histogramme         
+//  Egalisation Histogramme
 //----------------------------------------------------------
 void Egalise(float** img, int lgth, int wdth, int thresh)
 {
@@ -306,7 +304,7 @@ void Egalise(float** img, int lgth, int wdth, int thresh)
     {
         tmp = img[i][j];
         if (tmp > thresh) { HistoNg[(int)(tmp)]++; nb++; } }
- 
+
     for(i = 0; i < 256; i++)  HistoNg[i] /= (float)(nb);
 
     //Calcul Fnct Repartition
@@ -324,6 +322,49 @@ void Egalise(float** img, int lgth, int wdth, int thresh)
     for(i = 0; i < lgth; i++) for (j = 0; j < wdth; j++)
         img[i][j] = FnctRept[(int) (img[i][j])];
 }
+
+
+
+
+
+int is_in_mandelbrot_set(const int x, const int y, const int width, const int height, const int num_iterations) {
+    // Apply x_k and y_l scaling
+    const float real = 2.0f * (x - width / 1.35f) / (width - 1.0f);
+    const float image = 2.0f * (y - height / 2.0f) / (height - 1.0f);
+
+    // Initial z_k = 0
+    float current_real = 0.0f;
+    float current_image = 0.0f;
+
+    for (int i = 0; i < num_iterations; i++) {
+        // z_{k+1} = z_k^2 + c
+        const float temp = current_real;
+        current_real = CARRE(current_real) - CARRE(current_image) + real;
+        current_image = 2 * temp * current_image + image;
+
+        // The point is not in the Mandelbrot set if the magnitude of the complex number is greater than 2
+        if (CARRE(current_real) + CARRE(current_image) > 4.0f) {
+            return 1;
+        }
+
+    }
+
+    // The point is in the Mandelbrot set if we passed all the iterations
+    return 0;
+}
+
+void question_one(float** Graph2D, const int length, const int width) {
+    for(int i = 0; i < length; i++) for (int j = 0; j < width; j++) {
+        if (is_in_mandelbrot_set(j,i,length,width,200) == 0) {
+            // If the point is in the mandelbrot set, we set its color to black
+            Graph2D[i][j] = 0;
+        } else {
+            // If the point is not in the mandelbrot set, we set its color to white
+            Graph2D[i][j] = 255;
+        }
+    }
+}
+
 
 
 //----------------------------------------------------------
@@ -352,26 +393,19 @@ int main(int argc, char** argv)
 
     //Init
     for(i = 0; i < length; i++) for (j = 0; j < width; j++) Graph2D[i][j] = 0.0;
- 
+
 //--------------------------------------------------------------------------------
 // PROGRAMME ---------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
 
-  
-   //---------------------------
-   //Algorithme NEWTON
-   //---------------------------
+    question_one(Graph2D, length, width);
 
-   //implementer ici
- 
 
-  
-     
 //--------------------------------------------------------------------------------
 //---------------- visu sous XWINDOW ---------------------------------------------
 //--------------------------------------------------------------------------------
-  
+
     //Recalage-Egalise le graph
     Recal(Graph2D, length, width);
     Egalise(Graph2D, length, width, 0.0);
@@ -408,10 +442,9 @@ int main(int argc, char** argv)
         if (!flag_graph) break;
         }
     }
-       
+
     //retour sans probleme
     printf("\n Fini... \n\n\n");
     return 0;
 }
- 
 
