@@ -354,24 +354,29 @@ int is_in_mandelbrot_set(const float x, const float y, const int width, const in
 
 
 void question_II_2(float** Graph2D, const int length, const int width, const int num_iterations) {
-    // Pour chaque point c = x + yi
+    // For each point c = x + yi
     for (float y = 0; y < length; y += 0.1f) {
         for (float x = 0; x < width; x += 0.1f) {
+            // Increment the z points visited if the point is in the Mandelbrot set
             if (is_in_mandelbrot_set(x, y, width, length, num_iterations) == 0) {
+                // Apply x_k and y_l scaling
                 float c_real = 2.0f * (x - width / 1.35f) / (width - 1.0f);
                 float c_imag = 2.0f * (y - length / 2.0f) / (length - 1.0f);
 
                 float z_real = 0;
                 float z_imag = 0;
 
+                // We increment the pixels corresponding to all the z points we visited
                 for (int i = 0; i < num_iterations; i++) {
                     const float old_real = z_real;
                     z_real = CARRE(z_real) - CARRE(z_imag) + c_real;
                     z_imag = 2*old_real*z_imag + c_imag;
 
+                    // Reverse the scaling to get the pixel coordinates
                     const int plot_x = (int)((z_real + 1.5f) * width / 2.0f);
                     const int plot_y = (int)((z_imag + 1.0f) * length / 2.0f);
 
+                    // Increment the pixel if it is within the bounds
                     if (plot_x >= 0 && plot_x < width && plot_y >= 0 && plot_y < length) {
                         Graph2D[plot_x][plot_y] += 1;
                     }
