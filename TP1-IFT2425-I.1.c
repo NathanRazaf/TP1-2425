@@ -1,7 +1,7 @@
 //------------------------------------------------------
 // module  : Tp-IFT2425-I.1.c
-// author  : 
-// date    : 
+// author  : Nathan Razafindrakoto (20254813) & Arman Nunez (20240160)
+// date    : 26/02/2025
 // version : 1.0
 // language: C
 // note    :
@@ -67,7 +67,7 @@ int open_display()
 
 /************************************************************************/
 /* FABRIQUE_WINDOW()							*/
-/* Cette fonction crée une fenetre X et l'affiche à l'écran.	        */
+/* Cette fonction crï¿½e une fenetre X et l'affiche ï¿½ l'ï¿½cran.	        */
 /************************************************************************/
 Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int zoom)
 {
@@ -111,7 +111,7 @@ Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int z
 
 /****************************************************************************/
 /* CREE_XIMAGE()							    */
-/* Crée une XImage à partir d'un tableau de float                           */
+/* Crï¿½e une XImage ï¿½ partir d'un tableau de float                           */
 /* L'image peut subir un zoom.						    */
 /****************************************************************************/
 XImage* cree_Ximage(float** mat, int z, int length, int width)
@@ -325,6 +325,45 @@ void Egalise(float** img, int lgth, int wdth, int thresh)
         img[i][j] = FnctRept[(int) (img[i][j])];
 }
 
+#define TOLERANCE 0.5*1e-6
+#define MAX_ITER 1000
+#define EPSILON 1e-5
+
+double f(double c_MV, double *y, int N) {
+    double sum1 = 0.0, sum2 = 0.0, sum_ln = 0.0;
+    for (int i = 0; i < N; i++) {
+        sum1 += y[i] * pow(c_MV, y[i]) * log(y[i]);
+        sum2 += y[i] * pow(c_MV, y[i]);
+        sum_ln += log(y[i]);
+    }
+    return (sum1 / sum2) - (1.0 / c_MV) - (sum_ln / N);
+}
+
+double df(double c_MV, double *y, int N) {
+    return (f(c_MV + EPSILON, y, N) - f(c_MV, y, N)) / EPSILON;
+}
+
+double newton_method(double *y, int N, double (*df)(double, double*, int)) {
+    double c_MV = 0.25;
+    int iter = 0;
+    while (iter < MAX_ITER) {
+        printf("Valeur de c_MV[%d]: %lf\n", iter, c_MV);
+        double f_val = f(c_MV, y, N);
+        double df_val = df(c_MV, y, N);
+        if (fabs(f_val) < TOLERANCE) {
+            break;
+        }
+        double c_new = c_MV - f_val / df_val;
+        if (fabs(c_new - c_MV) < TOLERANCE) {
+            c_MV = c_new;
+            break;
+        }
+        c_MV = c_new;
+        iter++;
+    }
+    return c_MV;
+}
+
 
 //----------------------------------------------------------
 //----------------------------------------------------------
@@ -363,7 +402,9 @@ int main(int argc, char** argv)
    //Algorithme NEWTON
    //---------------------------
 
-   //implementer ici
+    double y[] = {0.11, 0.24, 0.27, 0.52, 1.13, 1.54, 1.71, 1.84, 1.92, 2.01};
+    int N = sizeof(y) / sizeof(y[0]);
+    printf("Solution approchÃ©e pour 1a- : c_MV = %lf\n", newton_method(y, N, df));
  
 
   

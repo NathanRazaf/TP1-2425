@@ -1,7 +1,7 @@
 //------------------------------------------------------
-// module  : Tp-IFT2425-I.1.c
-// author  :
-// date    :
+// module  : Tp-IFT2425-II.1.c
+// author  : Nathan Razafindrakoto (20254813) & Arman Nunez (20240160)
+// date    : 26/02/2025
 // version : 1.0
 // language: C
 // note    :

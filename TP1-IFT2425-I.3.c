@@ -1,12 +1,12 @@
 //------------------------------------------------------
-// module  : Tp-IFT2425-II.2.c
+// module  : Tp-IFT2425-I.3.c
 // author  : Nathan Razafindrakoto (20254813) & Arman Nunez (20240160)
 // date    : 26/02/2025
 // version : 1.0
 // language: C
 // note    :
 //------------------------------------------------------
-//
+//  
 
 //------------------------------------------------
 // FICHIERS INCLUS -------------------------------
@@ -67,7 +67,7 @@ int open_display()
 
 /************************************************************************/
 /* FABRIQUE_WINDOW()							*/
-/* Cette fonction crée une fenetre X et l'affiche à l'écran.	        */
+/* Cette fonction cr�e une fenetre X et l'affiche � l'�cran.	        */
 /************************************************************************/
 Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int zoom)
 {
@@ -102,7 +102,7 @@ Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int z
     gc = XCreateGC(display, win, 0, NULL);
 
     XSelectInput(display, win, ExposureMask|KeyPressMask|ButtonPressMask|
-               ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask|
+               ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask| 
                StructureNotifyMask);
 
     XMapWindow(display, win);
@@ -111,7 +111,7 @@ Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int z
 
 /****************************************************************************/
 /* CREE_XIMAGE()							    */
-/* Crée une XImage à partir d'un tableau de float                           */
+/* Cr�e une XImage � partir d'un tableau de float                           */
 /* L'image peut subir un zoom.						    */
 /****************************************************************************/
 XImage* cree_Ximage(float** mat, int z, int length, int width)
@@ -168,7 +168,7 @@ XImage* cree_Ximage(float** mat, int z, int length, int width)
             somme = 0.0;
             for(zoom_lig = 0; zoom_lig < z; zoom_lig++) for (zoom_col = 0; zoom_col < z; zoom_col++)
                 somme += mat[lig+zoom_lig][col+zoom_col];
-
+           
             somme /= (z*z);
             dat[((lig/z)*wdth*4) + ((4*(col/z))+0)] = (unsigned char)somme;
             dat[((lig/z)*wdth*4) + ((4*(col/z))+1)] = (unsigned char)somme;
@@ -224,8 +224,8 @@ void free_fmatrix_2d(float** pmat)
 }
 
 //----------------------------------------------------------
-// Sauvegarde de l'image de nom <name> au format pgm
-//----------------------------------------------------------
+// Sauvegarde de l'image de nom <name> au format pgm                        
+//----------------------------------------------------------                
 void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth)
 {
     int i, j;
@@ -255,7 +255,7 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth)
     //--enregistrement--
     for(i = 0; i < lgth; i++) for (j = 0; j < wdth; j++)
 	    fprintf(fic, "%c", (char) mat[i][j]);
-
+   
     //--fermeture fichier--
     fclose(fic);
 }
@@ -276,7 +276,7 @@ void Recal(float** mat, int lgth, int wdth)
 
     //plus min
     for(i = 0; i < lgth; i++) for (j = 0; j < wdth; j++) mat[i][j] -= min;
-
+ 
     //Recherche du max
     max = mat[0][0];
     for(i = 0; i < lgth; i++) for (j = 0; j < wdth; j++)
@@ -288,7 +288,7 @@ void Recal(float** mat, int lgth, int wdth)
 }
 
 //----------------------------------------------------------
-//  Egalisation Histogramme
+//  Egalisation Histogramme         
 //----------------------------------------------------------
 void Egalise(float** img, int lgth, int wdth, int thresh)
 {
@@ -306,7 +306,7 @@ void Egalise(float** img, int lgth, int wdth, int thresh)
     {
         tmp = img[i][j];
         if (tmp > thresh) { HistoNg[(int)(tmp)]++; nb++; } }
-
+ 
     for(i = 0; i < 256; i++)  HistoNg[i] /= (float)(nb);
 
     //Calcul Fnct Repartition
@@ -325,65 +325,49 @@ void Egalise(float** img, int lgth, int wdth, int thresh)
         img[i][j] = FnctRept[(int) (img[i][j])];
 }
 
+#define TOLERANCE 0.5*1e-6
+#define MAX_ITER 1000
 
-int is_in_mandelbrot_set(const float x, const float y, const int width, const int height, const int num_iterations) {
-    // Apply x_k and y_l scaling
-    const float real = 2.0f * (x - width / 1.35f) / (width - 1.0f);
-    const float image = 2.0f * (y - height / 2.0f) / (height - 1.0f);
-
-    // Initial z_k = 0
-    float current_real = 0.0f;
-    float current_image = 0.0f;
-
-    for (int i = 0; i < num_iterations; i++) {
-        // z_{k+1} = z_k^2 + c
-        const float temp = current_real;
-        current_real = CARRE(current_real) - CARRE(current_image) + real;
-        current_image = 2 * temp * current_image + image;
-
-        // The point is not in the Mandelbrot set if the magnitude of the complex number is greater than 2
-        if (CARRE(current_real) + CARRE(current_image) > 4.0f) {
-            return 1;
-        }
-
+double f(double c_MV, double *y, int N) {
+    double sum1 = 0.0, sum2 = 0.0, sum_ln = 0.0;
+    for (int i = 0; i < N; i++) {
+        sum1 += y[i] * pow(c_MV, y[i]) * log(y[i]);
+        sum2 += y[i] * pow(c_MV, y[i]);
+        sum_ln += log(y[i]);
     }
-
-    // The point is in the Mandelbrot set if we passed all the iterations
-    return 0;
+    return (sum1 / sum2) - (1.0 / c_MV) - (sum_ln / N);
 }
 
-
-void question_II_2(float** Graph2D, const int length, const int width, const int num_iterations) {
-    // For each point c = x + yi
-    for (float y = 0; y < length; y += 0.1f) {
-        for (float x = 0; x < width; x += 0.1f) {
-            // Increment the z points visited if the point is in the Mandelbrot set
-            if (is_in_mandelbrot_set(x, y, width, length, num_iterations) == 0) {
-                // Apply x_k and y_l scaling
-                float c_real = 2.0f * (x - width / 1.35f) / (width - 1.0f);
-                float c_imag = 2.0f * (y - length / 2.0f) / (length - 1.0f);
-
-                float z_real = 0;
-                float z_imag = 0;
-
-                // We increment the pixels corresponding to all the z points we visited
-                for (int i = 0; i < num_iterations; i++) {
-                    const float old_real = z_real;
-                    z_real = CARRE(z_real) - CARRE(z_imag) + c_real;
-                    z_imag = 2*old_real*z_imag + c_imag;
-
-                    // Reverse the scaling to get the pixel coordinates
-                    const int plot_x = (int)((z_real + 1.5f) * width / 2.0f);
-                    const int plot_y = (int)((z_imag + 1.0f) * length / 2.0f);
-
-                    // Increment the pixel if it is within the bounds
-                    if (plot_x >= 0 && plot_x < width && plot_y >= 0 && plot_y < length) {
-                        Graph2D[plot_x][plot_y] += 1;
-                    }
-                }
-            }
-        }
+double df(double c_MV, double *y, int N) {
+    double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0;
+    for (int i = 0; i < N; i++) {
+        double v = y[i] * pow(c_MV, y[i]);
+        sum1 += v * log(y[i]) * log(y[i]);
+        sum2 += v * log(y[i]);
+        sum3 += v;
     }
+    return (sum1 * sum3 - sum2 * sum2) / (sum3 * sum3) + (1.0 / (c_MV * c_MV));
+}
+
+double newton_method(double *y, int N, double (*df)(double, double*, int)) {
+    double c_MV = 0.25;
+    int iter = 0;
+    while (iter < MAX_ITER) {
+        printf("Valeur de c_MV[%d]: %lf\n", iter, c_MV);
+        double f_val = f(c_MV, y, N);
+        double df_val = df(c_MV, y, N);
+        if (fabs(f_val) < TOLERANCE) {
+            break;
+        }
+        double c_new = c_MV - f_val / df_val;
+        if (fabs(c_new - c_MV) < TOLERANCE) {
+            c_MV = c_new;
+            break;
+        }
+        c_MV = c_new;
+        iter++;
+    }
+    return c_MV;
 }
 
 
@@ -413,17 +397,28 @@ int main(int argc, char** argv)
 
     //Init
     for(i = 0; i < length; i++) for (j = 0; j < width; j++) Graph2D[i][j] = 0.0;
-
+ 
 //--------------------------------------------------------------------------------
 // PROGRAMME ---------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
-    question_II_2(Graph2D, length, width, 200);
 
+  
+   //---------------------------
+   //Algorithme NEWTON
+   //---------------------------
+
+    double y[] = {0.11, 0.24, 0.27, 0.52, 1.13, 1.54, 1.71, 1.84, 1.92, 2.01};
+    int N = sizeof(y) / sizeof(y[0]);
+    printf("Solution approchée pour 1c- : c_MV = %lf\n", newton_method(y, N, df));
+ 
+
+  
+     
 //--------------------------------------------------------------------------------
 //---------------- visu sous XWINDOW ---------------------------------------------
 //--------------------------------------------------------------------------------
-
+  
     //Recalage-Egalise le graph
     Recal(Graph2D, length, width);
     Egalise(Graph2D, length, width, 0.0);
@@ -460,10 +455,9 @@ int main(int argc, char** argv)
         if (!flag_graph) break;
         }
     }
-
+       
     //retour sans probleme
     printf("\n Fini... \n\n\n");
     return 0;
 }
-
-
+ 
